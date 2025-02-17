@@ -32,39 +32,59 @@ private struct SpinRectangle: View {
         Rectangle()
             .frame(width: length, height: length)
             .cornerRadius(cornerRadius)
-            .rotationEffect(.degrees(isRotating ? 360 : 0))
+            .rotationEffect(.degrees(angle))
             .animation(
-                .linear(duration: animationSpeed)
-                .repeatForever(autoreverses: false),
-                value: isRotating
+                .linear(duration: animationDuration),
+                value: angle
             )
             .onAppear {
-                isRotating = true
+                startTimer()
+            }
+            .onDisappear {
+                stopTimer()
             }
     }
     
     // MARK: - Source of truth
     
-    @State private var isRotating = false
     @State private var cornerRadiusPercent: CGFloat
-    
+    @State private var angle: Double = 0 // 회전 각도
+    @State private var timer: Timer?
+
     // MARK: - Attribute
     
     private let length: CGFloat = 100
-    private let minSpeed: Double = 1.0
-    private let maxSpeed: Double = 5.0
+    private let minDuration: Double = 0.1
+    private let maxDuration: Double = 1.0
     
     var cornerRadius: CGFloat {
         length * cornerRadiusPercent
     }
-    var animationSpeed: Double {
-        maxSpeed - (maxSpeed - minSpeed) * (cornerRadius / (length / 2))
+    var animationDuration: Double {
+        maxDuration - (maxDuration - minDuration) * (cornerRadius / (length / 2))
     }
     
     // MARK: - Initializer
     
     init(cornerRadiusPercent: CGFloat = 0) {
         self.cornerRadiusPercent = cornerRadiusPercent
+    }
+    
+    // MARK: - Timer
+    
+    private func startTimer() {
+        stopTimer() // 기존 타이머 정리
+        angle += 90
+
+        let totalDelay = animationDuration + (1 / (cornerRadius + 1))
+        timer = Timer.scheduledTimer(withTimeInterval: totalDelay, repeats: false) { _ in
+            startTimer()
+        }
+    }
+
+    private func stopTimer() {
+        timer?.invalidate()
+        timer = nil
     }
 }
 
